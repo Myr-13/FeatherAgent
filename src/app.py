@@ -1,17 +1,17 @@
 import flet as ft
 import openai
 
+client = openai.OpenAI(
+	api_key="qw-owfcvEfUE2jRy2qv2gwbCdtQwwhajJuYh1cfxykH0gd70IYSWF1qJyPAZQurpc6e",
+	base_url="http://localhost:8000/"
+)
 
-async def main(page: ft.Page):
-	client = openai.OpenAI(
-		api_key="qw-owfcvEfUE2jRy2qv2gwbCdtQwwhajJuYh1cfxykH0gd70IYSWF1qJyPAZQurpc6e",
-		base_url="http://localhost:8000/"
-	)
 
+def client_wrapper(content: str) -> tuple[str, dict | None]:
 	res = client.chat.completions.create(
 		model="qwen3.5-flash",
 		messages=[
-			{"role": "user", "content": "Дарова. прочитай файл src/app.py и скажи че в нем"}
+			{"role": "user", "content": content}
 		],
 		tools=[
 			{
@@ -31,9 +31,11 @@ async def main(page: ft.Page):
 		]
 	)
 
-	print(res.choices[0].message)
+	return res.choices[0].message.content, res.choices[0].message.tool_calls
 
-	page.title = "AI Coding Agent"
+
+async def main(page: ft.Page):
+	page.title = "Feather Code"
 	page.theme_mode = ft.ThemeMode.DARK
 	page.padding = 0
 	page.spacing = 0
@@ -51,11 +53,13 @@ async def main(page: ft.Page):
 		hint_text="Напишите задачу для агента...",
 		expand=True,
 		border_radius=10,
+		value="src/main.py че там",
 		on_submit=lambda e: send_message(e)
 	)
 
 	def send_message(e):
 		if not input_field.value:
+			print(input_field.value)
 			return
 
 		user_text = input_field.value
@@ -67,15 +71,15 @@ async def main(page: ft.Page):
 		)
 
 		# Имитация работы агента (typing status)
-		bot_message = ft.Text("🤖 Agent: ", color=ft.Colors.GREEN_200)
+		try:
+			agent_text: str = client_wrapper(user_text)
+		except Exception as e:
+			chat_list.controls.append(f"{e}")
+			page.update()
+			return
+		bot_message = ft.Text(f"🤖 Agent: {agent_text}", color=ft.Colors.GREEN_200)
 		chat_list.controls.append(bot_message)
 		page.update()
-
-		# Имитация стриминга ответа
-		response_text = "Я проанализировал ваш код. Вот решение...\n```python\nprint('Hello World')\n```"
-		for i in range(len(response_text)):
-			bot_message.value += response_text[i]
-			page.update()
 
 	# Боковая панель (Sidebar)
 	sidebar = ft.Container(
