@@ -29,9 +29,13 @@ class Pipeline:
 				with open(file_name, "r", encoding="utf-8") as f:
 					content = f.read()
 			except FileNotFoundError:
+				content = ""
 				pass
 
-			new_content = content.replace(old_string, new_string)
+			if old_string == "":
+				new_content = content.replace(old_string, new_string)
+			else:
+				new_content = new_string
 
 			with open(file_name, "w", encoding="utf-8") as f:
 				f.write(new_content)
