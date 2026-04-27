@@ -1,40 +1,21 @@
+import asyncio
+import json
+
 import flet as ft
-import openai
+from flet import FontWeight
 
-client = openai.OpenAI(
-	api_key="qw-owfcvEfUE2jRy2qv2gwbCdtQwwhajJuYh1cfxykH0gd70IYSWF1qJyPAZQurpc6e",
-	base_url="http://localhost:8000/"
-)
-
-
-def client_wrapper(content: str) -> tuple[str, dict | None]:
-	res = client.chat.completions.create(
-		model="qwen3.5-flash",
-		messages=[
-			{"role": "user", "content": content}
-		],
-		tools=[
-			{
-				"type": "function",
-				"function": {
-					"name": "read",
-					"description": "Read file",
-					"parameters": {
-						"type": "object",
-						"properties": {
-							"name": {"type": "string", "description": "File name"}
-						},
-						"required": ["name"]
-					}
-				}
-			}
-		]
-	)
-
-	return res.choices[0].message.content, res.choices[0].message.tool_calls
+from src.agent.agent import Agent
+from src.utils.filesystem import build_tree
+from src.agent.prompts import main_prompt
 
 
-async def main(page: ft.Page):
+async def test(page: ft.Page, chat_list):
+	await asyncio.sleep(3)
+	chat_list.controls.append(ft.Text(f"Done", color=ft.Colors.BLUE_200))
+	page.update()
+
+
+def main(page: ft.Page):
 	page.title = "Feather Code"
 	page.theme_mode = ft.ThemeMode.DARK
 	page.padding = 0
@@ -53,13 +34,14 @@ async def main(page: ft.Page):
 		hint_text="Напишите задачу для агента...",
 		expand=True,
 		border_radius=10,
-		value="src/main.py че там",
+		value="src/app.py че там",
 		on_submit=lambda e: send_message(e)
 	)
 
+	agent: Agent = Agent()
+
 	def send_message(e):
 		if not input_field.value:
-			print(input_field.value)
 			return
 
 		user_text = input_field.value
@@ -72,19 +54,34 @@ async def main(page: ft.Page):
 
 		# Имитация работы агента (typing status)
 		try:
-			agent_text: str = client_wrapper(user_text)
+			agent_res = agent.process(
+				user_prompt=user_text,
+				system_prompt=main_prompt(build_tree("."))
+			)
 		except Exception as e:
 			chat_list.controls.append(f"{e}")
 			page.update()
 			return
-		bot_message = ft.Text(f"🤖 Agent: {agent_text}", color=ft.Colors.GREEN_200)
+
+		if agent_res[1] is not None:
+			for tool in agent_res[1]:
+				args = json.loads(tool.function.arguments)
+				if tool.function.name == "read":
+					with open(args["name"], "r", encoding="utf-8") as f:
+						content: str = f.read()
+						agent_res = agent.process(
+							tool_result=content,
+							system_prompt=main_prompt(build_tree("."))
+						)
+
+		bot_message = ft.Text(f"🤖 Agent: {agent_res[0]}", selectable=True, color=ft.Colors.GREEN_200)
 		chat_list.controls.append(bot_message)
 		page.update()
 
 	# Боковая панель (Sidebar)
 	sidebar = ft.Container(
 		content=ft.Column([
-			ft.Text("History", weight="bold", size=20),
+			ft.Text("History", weight=FontWeight.BOLD, size=20),
 			ft.Divider(),
 			ft.TextButton("Task 1: Optimize SQL"),
 			ft.TextButton("Task 2: Refactor UI"),
