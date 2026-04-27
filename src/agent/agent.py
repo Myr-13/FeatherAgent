@@ -8,12 +8,12 @@ class Agent:
 		self.base_url = "http://localhost:8000/"
 		self.api_key = "qw-owfcvEfUE2jRy2qv2gwbCdtQwwhajJuYh1cfxykH0gd70IYSWF1qJyPAZQurpc6e"
 
-		self._client = openai.OpenAI(
+		self._client = openai.AsyncOpenAI(
 			api_key=self.api_key,
 			base_url=self.base_url
 		)
 
-	def process(self, *,
+	async def process(self, *,
 				user_prompt: str | None = None,
 				tool_result: str | None = None,
 				system_prompt: str | None = None
@@ -24,7 +24,7 @@ class Agent:
 		role: str = "user" if user_prompt is not None else "tool"
 		content: str = user_prompt if user_prompt is not None else tool_result
 
-		res = self._client.chat.completions.create(
+		res = await self._client.chat.completions.create(
 			model=self.model,
 			messages=[
 				{"role": "system", "content": system_prompt},
@@ -35,13 +35,29 @@ class Agent:
 					"type": "function",
 					"function": {
 						"name": "read",
-						"description": "Read file",
+						"description": "Read file by file_name (path)",
 						"parameters": {
 							"type": "object",
 							"properties": {
-								"name": {"type": "string", "description": "File name"}
+								"file_name": {"type": "string", "description": "File name or path"}
 							},
-							"required": ["name"]
+							"required": ["file_name"]
+						}
+					}
+				},
+				{
+					"type": "function",
+					"function": {
+						"name": "write",
+						"description": "Replaces EXACTLY old_string with new_string in file_name (path)",
+						"parameters": {
+							"type": "object",
+							"properties": {
+								"old_string": {"type": "string", "description": "Old string in file to replace with new_string"},
+								"new_string": {"type": "string", "description": "New string"},
+								"file_name": {"type": "string", "description": "File name or path"}
+							},
+							"required": ["old_string", "new_string", "file_name"]
 						}
 					}
 				}
