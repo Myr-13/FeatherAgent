@@ -13,19 +13,28 @@ class Pipeline:
 		print(tool_name, arguments)
 
 		if tool_name == "read":
-			file_name: str = arguments["name"]
+			file_name: str = arguments["file_name"]
 
 			await self.emit_message(f"Read {file_name}", "bluegrey", "🔨")
 			with open(file_name, "r", encoding="utf-8") as f:
 				return f.read()
 		elif tool_name == "write":
-			file_name: str = arguments["name"]
+			file_name: str = arguments["file_name"]
 			old_string: str = arguments["old_string"]
 			new_string: str = arguments["new_string"]
 
-			await self.emit_message(f"Write {file_name}", "bluegrey", "🔨")
-			with open(file_name, "r", encoding="utf-8") as f:
-				return f.read()
+			await self.emit_message(f"Updating {file_name}", "bluegrey", "🔨")
+
+			try:
+				with open(file_name, "r", encoding="utf-8") as f:
+					content = f.read()
+			except FileNotFoundError:
+				pass
+
+			new_content = content.replace(old_string, new_string)
+
+			with open(file_name, "w", encoding="utf-8") as f:
+				f.write(new_content)
 
 		return None
 
