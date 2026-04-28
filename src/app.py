@@ -5,8 +5,6 @@ from flet import FontWeight
 # Твои импорты
 from src.agent.agent import Agent
 from src.pipeline import Pipeline
-from src.utils.filesystem import build_tree
-from src.agent.prompts import main_prompt
 
 
 class FeatherCodeApp:
@@ -27,7 +25,7 @@ class FeatherCodeApp:
 			hint_text="Напишите задачу для агента...",
 			expand=True,
 			border_radius=10,
-			value="src/app.py че там",
+			value="Добавь инструмент execute_shell в pipeline.py и agent.py",
 			on_submit=self.handle_send_message
 		)
 

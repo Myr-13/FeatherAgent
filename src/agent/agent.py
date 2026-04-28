@@ -34,7 +34,7 @@ class Agent:
 				{
 					"type": "function",
 					"function": {
-						"name": "read",
+						"name": "x7a3_read",
 						"description": "Read file by file_name (path)",
 						"parameters": {
 							"type": "object",
@@ -48,7 +48,7 @@ class Agent:
 				{
 					"type": "function",
 					"function": {
-						"name": "write",
+						"name": "o93u_write",
 						"description": "Replaces EXACTLY old_string with new_string in file_name (path)",
 						"parameters": {
 							"type": "object",
