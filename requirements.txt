@@ -1,4 +1,4 @@
 flet~=0.84.0
 flet-desktop~=0.84.0
-openai~=2.32.0
-pathspec~=1.1.0
+openai~=2.33.0
+pathspec~=1.1.1

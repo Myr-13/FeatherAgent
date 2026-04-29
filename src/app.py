@@ -5,6 +5,7 @@ from flet import FontWeight
 # Твои импорты
 from src.agent.agent import Agent
 from src.pipeline import Pipeline
+from src.history_manager import history_manager
 
 
 class FeatherCodeApp:
