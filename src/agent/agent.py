@@ -1,17 +1,44 @@
 import openai
-from openai.types.chat import ChatCompletionMessageFunctionToolCall, ChatCompletionMessageCustomToolCall, ChatCompletion
+from openai.types.chat import ChatCompletionMessageFunctionToolCall, ChatCompletionMessageCustomToolCall
+from src.utils.storage import appdata
 
 
 class Agent:
 	def __init__(self):
-		self.model = "deepseek/deepseek-v4-flash"
-		self.base_url = "https://routerai.ru/api/v1"
-		self.api_key = "sk-5RWx2FkY_1tCFnuKFctKRycaDDcEpTEX"
+		# Загружаем настройки из AppData
+		self.model = appdata.config.get("model", "deepseek/deepseek-v4-flash")
+		self.base_url = appdata.config.get("base_url", "https://routerai.ru/api/v1")
+		self.api_key = appdata.config.get("api_key", "sk-5RWx2FkY_1tCFnuKFctKRycaDDcEpTEX")
 
-		self._client = openai.AsyncOpenAI(
+		self._client = self._build_client()
+
+	def _build_client(self):
+		return openai.AsyncOpenAI(
 			api_key=self.api_key,
 			base_url=self.base_url
 		)
+
+	def configure(self, api_key: str | None = None, base_url: str | None = None, model: str | None = None) -> None:
+		"""Обновить настройки и сохранить в AppData."""
+		changed = False
+
+		if api_key is not None and api_key != self.api_key:
+			self.api_key = api_key
+			appdata.config.set("api_key", api_key)
+			changed = True
+
+		if base_url is not None and base_url != self.base_url:
+			self.base_url = base_url
+			appdata.config.set("base_url", base_url)
+			changed = True
+
+		if model is not None and model != self.model:
+			self.model = model
+			appdata.config.set("model", model)
+			changed = True
+
+		if changed:
+			self._client = self._build_client()
 
 	async def process(self, history: list[dict]) -> tuple[str, list[ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall]]:
 		res = await self._client.chat.completions.create(
